@@ -22,8 +22,24 @@ jobs:
       - name: Check site configuration
         run: |
           echo "Checking config/sites.json..."
+
           test -f config/sites.json
-          cat config/sites.json
+
+          python - <<'PY'
+          import json
+
+          with open("config/sites.json", "r", encoding="utf-8") as f:
+              config = json.load(f)
+
+          print("Source domain:", config["source"]["domain"])
+          print("Source login :", config["source"]["login_url"])
+          print("Configured sites:")
+
+          for site_id, site in config["sites"].items():
+              print(f"  - {site_id}")
+              print(f"    Domain: {site['domain']}")
+              print(f"    Login : {site['login_url']}")
+          PY
 
       - name: Check required files
         run: |
@@ -46,41 +62,127 @@ jobs:
         run: |
           python scripts/build.py
 
-      - name: Verify generated site
+      - name: Verify all generated sites
         run: |
-          echo "Checking generated build..."
+          python - <<'PY'
+          import json
+          from pathlib import Path
 
-          test -d dist/in2pcfix
-          test -f dist/in2pcfix/index.html
-          test -f dist/in2pcfix/robots.txt
-          test -f dist/in2pcfix/sitemap.xml
-          test -f dist/in2pcfix/favicon.ico
+          ROOT = Path(".")
+          DIST = ROOT / "dist"
 
-          echo "Generated site structure is valid."
+          with open(ROOT / "config" / "sites.json", "r", encoding="utf-8") as f:
+              config = json.load(f)
 
-          echo "--- Generated robots.txt ---"
-          cat dist/in2pcfix/robots.txt
+          sites = config["sites"]
 
-          echo "--- Generated sitemap URLs ---"
-          grep -o "<loc>[^<]*</loc>" dist/in2pcfix/sitemap.xml
+          print("======================================")
+          print(" VERIFYING ALL GENERATED SITES")
+          print("======================================")
 
-      - name: Verify domain URLs
-        run: |
-          echo "Checking generated domain URLs..."
+          for site_id, site in sites.items():
 
-          grep -q 'https://in2pcfix.com/' dist/in2pcfix/index.html
-          grep -q 'https://in2pcfix.com/sitemap.xml' dist/in2pcfix/robots.txt
-          grep -q 'https://in2pcfix.com/' dist/in2pcfix/sitemap.xml
+              domain = site["domain"].rstrip("/")
+              login_url = site["login_url"].rstrip("/")
 
-          echo "Domain URL verification successful."
-      
-      - name: Verify login URL
-        run: |
-          echo "Checking generated login URL..."
+              site_dir = DIST / site_id
 
-          grep -q 'https://kadoqq.wiki/' dist/in2pcfix/index.html
+              print()
+              print("--------------------------------------")
+              print(f"Site: {site_id}")
+              print(f"Domain: {domain}")
+              print(f"Login : {login_url}")
+              print("--------------------------------------")
 
-          echo "Login URL verification successful." 
+              # Directory
+              if not site_dir.is_dir():
+                  raise SystemExit(
+                      f"ERROR: Missing build directory: {site_dir}"
+                  )
+
+              print("✓ Build directory exists")
+
+              # Required files
+              required_files = [
+                  "index.html",
+                  "robots.txt",
+                  "sitemap.xml",
+                  "favicon.ico",
+              ]
+
+              for filename in required_files:
+                  file_path = site_dir / filename
+
+                  if not file_path.is_file():
+                      raise SystemExit(
+                          f"ERROR: Missing {filename} in {site_id}"
+                      )
+
+                  print(f"✓ {filename}")
+
+              # Read files
+              index_html = (
+                  site_dir / "index.html"
+              ).read_text(
+                  encoding="utf-8"
+              )
+
+              robots = (
+                  site_dir / "robots.txt"
+              ).read_text(
+                  encoding="utf-8"
+              )
+
+              sitemap = (
+                  site_dir / "sitemap.xml"
+              ).read_text(
+                  encoding="utf-8"
+              )
+
+              # Domain verification
+              if domain not in index_html:
+                  raise SystemExit(
+                      f"ERROR: Domain not found in index.html: {domain}"
+                  )
+
+              print("✓ Domain found in index.html")
+
+              if f"Sitemap: {domain}/sitemap.xml" not in robots:
+                  raise SystemExit(
+                      f"ERROR: Incorrect sitemap URL in robots.txt for {site_id}"
+                  )
+
+              print("✓ Robots sitemap URL")
+
+              if domain not in sitemap:
+                  raise SystemExit(
+                      f"ERROR: Domain not found in sitemap.xml: {domain}"
+                  )
+
+              print("✓ Sitemap domain")
+
+              # Login verification
+              if login_url not in index_html:
+                  raise SystemExit(
+                      f"ERROR: Login URL not found in index.html: {login_url}"
+                  )
+
+              print("✓ Login URL")
+
+              # Count pages
+              page_count = len(
+                  list(site_dir.rglob("index.html"))
+              )
+
+              print(
+                  f"✓ Pages generated: {page_count}"
+              )
+
+          print()
+          print("======================================")
+          print(" ALL SITE VERIFICATIONS SUCCESSFUL")
+          print("======================================")
+          PY
 
       - name: Build test successful
         run: |
