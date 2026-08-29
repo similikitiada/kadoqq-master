@@ -73,6 +73,14 @@ jobs:
           grep -q 'https://in2pcfix.com/' dist/in2pcfix/sitemap.xml
 
           echo "Domain URL verification successful."
+      
+      - name: Verify login URL
+        run: |
+          echo "Checking generated login URL..."
+
+          grep -q 'https://kadoqq.wiki/' dist/in2pcfix/index.html
+
+          echo "Login URL verification successful." 
 
       - name: Build test successful
         run: |
