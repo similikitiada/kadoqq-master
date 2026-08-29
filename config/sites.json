@@ -7,6 +7,10 @@
     "in2pcfix": {
       "domain": "https://in2pcfix.com",
       "login_url": "https://kadoqq.wiki/"
+    },
+    "demo": {
+      "domain": "https://demo.example.com",
+      "login_url": "https://kadoqq.wiki/"
     }
   }
 }
