@@ -1,0 +1,44 @@
+name: KADOQQ Master Build Test
+
+on:
+  push:
+    branches:
+      - multi-domain-build
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check site configuration
+        run: |
+          echo "Checking config/sites.json..."
+          test -f config/sites.json
+          cat config/sites.json
+
+      - name: Check required files
+        run: |
+          echo "Checking required KADOQQ files..."
+
+          test -f index.html
+          test -f robots.txt
+          test -f sitemap.xml
+          test -f site.webmanifest
+          test -f favicon.ico
+
+          test -d artikel
+          test -d faq
+          test -d panduan
+          test -d tentang
+
+          echo "All required files are present."
+
+      - name: Build test successful
+        run: |
+          echo "======================================"
+          echo " KADOQQ MASTER BUILD TEST SUCCESSFUL "
+          echo "======================================"
