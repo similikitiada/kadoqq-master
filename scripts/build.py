@@ -75,7 +75,6 @@ def validate_config(config):
         raise ValueError(
             "'sites' must contain at least one site"
         )
-
     for site_id, site in sites.items():
 
         if not site.get("domain"):
@@ -86,6 +85,16 @@ def validate_config(config):
         if not site.get("login_url"):
             raise ValueError(
                 f"Site '{site_id}' is missing 'login_url'"
+            )
+
+        if "deploy" not in site:
+            raise ValueError(
+                f"Site '{site_id}' is missing 'deploy'"
+            )
+
+        if not isinstance(site["deploy"], bool):
+            raise ValueError(
+                f"Site '{site_id}' 'deploy' must be true or false"
             )
 
 
