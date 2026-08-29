@@ -176,9 +176,9 @@ def create_robots(target_dir, domain):
     print(f"✓ Robots generated: {robots_file}")
 
 
-def build_site(site_id, site):
+def build_site(site_id, site, source_domain):
     domain = site["domain"].rstrip("/")
-    source_domain = "https://in2pcfix.com"
+    source_domain = source_domain.rstrip("/")
 
     target_dir = DIST_DIR / site_id
 
@@ -217,13 +217,25 @@ def main():
     config = load_config()
     validate_config(config)
 
+        if "source" not in config:
+        raise ValueError("Missing 'source' in config/sites.json")
+
+    if not config["source"].get("domain"):
+        raise ValueError("Missing source domain in config/sites.json")
+
+    source_domain = config["source"]["domain"]
+
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
 
     DIST_DIR.mkdir(parents=True, exist_ok=True)
 
-    for site_id, site in config["sites"].items():
-        build_site(site_id, site)
+for site_id, site in config["sites"].items():
+    build_site(
+        site_id,
+        site,
+        source_domain
+    )
 
     print()
     print("======================================")
