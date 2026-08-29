@@ -1,0 +1,42 @@
+name: Test Production Repository Access
+
+on:
+  workflow_dispatch:
+
+jobs:
+  access-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master branch
+        uses: actions/checkout@v4
+        with:
+          ref: multi-domain-build
+
+      - name: Test access to production repository
+        uses: actions/checkout@v4
+        with:
+          repository: similikitiada/kadoqq
+          token: ${{ secrets.PROD_REPO_TOKEN }}
+          path: production-test
+
+      - name: Verify production repository
+        run: |
+          echo "======================================"
+          echo " PRODUCTION REPOSITORY ACCESS TEST"
+          echo "======================================"
+
+          test -d production-test
+
+          echo "✓ Repository kadoqq accessible"
+          echo "✓ Authentication successful"
+          echo "✓ Repository contents readable"
+
+          echo
+          echo "Production repository:"
+          ls -la production-test
+
+          echo
+          echo "======================================"
+          echo " ACCESS TEST SUCCESSFUL"
+          echo "======================================"
