@@ -1,4 +1,7 @@
 {
+  "source": {
+    "domain": "https://in2pcfix.com"
+  },
   "sites": {
     "in2pcfix": {
       "domain": "https://in2pcfix.com",
