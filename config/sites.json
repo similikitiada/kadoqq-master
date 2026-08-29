@@ -6,11 +6,13 @@
   "sites": {
     "in2pcfix": {
       "domain": "https://in2pcfix.com",
-      "login_url": "https://kadoqq.wiki/"
+      "login_url": "https://kadoqq.wiki/",
+      "deploy": true
     },
     "demo": {
       "domain": "https://demo.example.com",
-      "login_url": "https://kadoqq.wiki/"
+      "login_url": "https://kadoqq.wiki/",
+      "deploy": false
     }
   }
 }
