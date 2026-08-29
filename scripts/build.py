@@ -45,15 +45,39 @@ def load_config():
 
 
 def validate_config(config):
+    # Validasi source
+    if "source" not in config:
+        raise ValueError(
+            "Missing 'source' in config/sites.json"
+        )
+
+    source = config["source"]
+
+    if not source.get("domain"):
+        raise ValueError(
+            "Missing source domain in config/sites.json"
+        )
+
+    if not source.get("login_url"):
+        raise ValueError(
+            "Missing source login_url in config/sites.json"
+        )
+
+    # Validasi sites
     if "sites" not in config:
-        raise ValueError("Missing 'sites' in config/sites.json")
+        raise ValueError(
+            "Missing 'sites' in config/sites.json"
+        )
 
     sites = config["sites"]
 
     if not isinstance(sites, dict) or not sites:
-        raise ValueError("'sites' must contain at least one site")
+        raise ValueError(
+            "'sites' must contain at least one site"
+        )
 
     for site_id, site in sites.items():
+
         if not site.get("domain"):
             raise ValueError(
                 f"Site '{site_id}' is missing 'domain'"
@@ -69,25 +93,40 @@ def copy_source(target_dir):
     if target_dir.exists():
         shutil.rmtree(target_dir)
 
-    target_dir.mkdir(parents=True, exist_ok=True)
+    target_dir.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
     for item in ROOT.iterdir():
+
         if item.name in EXCLUDED_NAMES:
             continue
 
         destination = target_dir / item.name
 
         if item.is_dir():
-            shutil.copytree(item, destination)
+            shutil.copytree(
+                item,
+                destination
+            )
         else:
-            shutil.copy2(item, destination)
+            shutil.copy2(
+                item,
+                destination
+            )
 
 
-def replace_domain_in_text_files(target_dir, source_domain, target_domain):
-    source_domain = source_domain.rstrip("/")
-    target_domain = target_domain.rstrip("/")
+def replace_text(
+    target_dir,
+    source_text,
+    target_text
+):
+    source_text = source_text.rstrip("/")
+    target_text = target_text.rstrip("/")
 
     for file_path in target_dir.rglob("*"):
+
         if not file_path.is_file():
             continue
 
@@ -95,11 +134,16 @@ def replace_domain_in_text_files(target_dir, source_domain, target_domain):
             continue
 
         try:
-            content = file_path.read_text(encoding="utf-8")
+            content = file_path.read_text(
+                encoding="utf-8"
+            )
         except UnicodeDecodeError:
             continue
 
-        updated = content.replace(source_domain, target_domain)
+        updated = content.replace(
+            source_text,
+            target_text
+        )
 
         if updated != content:
             file_path.write_text(
@@ -108,15 +152,21 @@ def replace_domain_in_text_files(target_dir, source_domain, target_domain):
             )
 
 
-def collect_pages(target_dir, domain):
+def collect_pages(target_dir):
     pages = []
 
     for index_file in target_dir.rglob("index.html"):
-        relative = index_file.relative_to(target_dir)
+
+        relative = index_file.relative_to(
+            target_dir
+        )
 
         if relative.parts == ("index.html",):
+
             path = "/"
+
         else:
+
             directory = relative.parent.as_posix()
             path = f"/{directory}/"
 
@@ -125,8 +175,11 @@ def collect_pages(target_dir, domain):
     return sorted(set(pages))
 
 
-def create_sitemap(target_dir, domain):
-    pages = collect_pages(target_dir, domain)
+def create_sitemap(
+    target_dir,
+    domain
+):
+    pages = collect_pages(target_dir)
     today = date.today().isoformat()
 
     lines = [
@@ -137,7 +190,10 @@ def create_sitemap(target_dir, domain):
     ]
 
     for path in pages:
-        url = escape(f"{domain.rstrip('/')}{path}")
+
+        url = escape(
+            f"{domain.rstrip('/')}{path}"
+        )
 
         lines.extend([
             "    <url>",
@@ -150,16 +206,25 @@ def create_sitemap(target_dir, domain):
     lines.append("</urlset>")
 
     sitemap_file = target_dir / "sitemap.xml"
+
     sitemap_file.write_text(
         "\n".join(lines) + "\n",
         encoding="utf-8"
     )
 
-    print(f"✓ Sitemap generated: {sitemap_file}")
-    print(f"  Pages found: {len(pages)}")
+    print(
+        f"✓ Sitemap generated: {sitemap_file}"
+    )
+
+    print(
+        f"  Pages found: {len(pages)}"
+    )
 
 
-def create_robots(target_dir, domain):
+def create_robots(
+    target_dir,
+    domain
+):
     robots_content = (
         "User-agent: *\n"
         "Allow: /\n"
@@ -168,17 +233,30 @@ def create_robots(target_dir, domain):
     )
 
     robots_file = target_dir / "robots.txt"
+
     robots_file.write_text(
         robots_content,
         encoding="utf-8"
     )
 
-    print(f"✓ Robots generated: {robots_file}")
+    print(
+        f"✓ Robots generated: {robots_file}"
+    )
 
 
-def build_site(site_id, site, source_domain):
+def build_site(
+    site_id,
+    site,
+    source_domain,
+    source_login_url
+):
     domain = site["domain"].rstrip("/")
+
+    target_login_url = site["login_url"].rstrip("/")
+
     source_domain = source_domain.rstrip("/")
+
+    source_login_url = source_login_url.rstrip("/")
 
     target_dir = DIST_DIR / site_id
 
@@ -186,55 +264,83 @@ def build_site(site_id, site, source_domain):
     print("======================================")
     print(f" BUILDING: {site_id}")
     print("======================================")
-    print(f"Domain: {domain}")
 
+    print(
+        f"Domain: {domain}"
+    )
+
+    print(
+        f"Login : {target_login_url}"
+    )
+
+    # Copy source website
     copy_source(target_dir)
 
-    replace_domain_in_text_files(
+    # Replace source domain
+    replace_text(
         target_dir,
         source_domain,
         domain
     )
 
+    # Replace source login URL
+    replace_text(
+        target_dir,
+        source_login_url,
+        target_login_url
+    )
+
+    # Generate robots.txt
     create_robots(
         target_dir,
         domain
     )
 
+    # Generate sitemap.xml
     create_sitemap(
         target_dir,
         domain
     )
 
-    print(f"✓ Build completed: {target_dir}")
+    print(
+        f"✓ Build completed: {target_dir}"
+    )
 
 
 def main():
+
     print("======================================")
     print(" KADOQQ MASTER MULTI-DOMAIN BUILDER")
     print("======================================")
 
+    # Load configuration
     config = load_config()
+
+    # Validate configuration
     validate_config(config)
 
-    if "source" not in config:
-        raise ValueError("Missing 'source' in config/sites.json")
-
-    if not config["source"].get("domain"):
-        raise ValueError("Missing source domain in config/sites.json")
-
+    # Source configuration
     source_domain = config["source"]["domain"]
 
+    source_login_url = config["source"]["login_url"]
+
+    # Reset dist directory
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
 
-    DIST_DIR.mkdir(parents=True, exist_ok=True)
+    DIST_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
 
+    # Build every configured site
     for site_id, site in config["sites"].items():
+
         build_site(
             site_id,
             site,
-            source_domain
+            source_domain,
+            source_login_url
         )
 
     print()
