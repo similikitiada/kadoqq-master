@@ -14,6 +14,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
       - name: Check site configuration
         run: |
           echo "Checking config/sites.json..."
@@ -36,6 +41,38 @@ jobs:
           test -d tentang
 
           echo "All required files are present."
+
+      - name: Run multi-domain builder
+        run: |
+          python scripts/build.py
+
+      - name: Verify generated site
+        run: |
+          echo "Checking generated build..."
+
+          test -d dist/in2pcfix
+          test -f dist/in2pcfix/index.html
+          test -f dist/in2pcfix/robots.txt
+          test -f dist/in2pcfix/sitemap.xml
+          test -f dist/in2pcfix/favicon.ico
+
+          echo "Generated site structure is valid."
+
+          echo "--- Generated robots.txt ---"
+          cat dist/in2pcfix/robots.txt
+
+          echo "--- Generated sitemap URLs ---"
+          grep -o "<loc>[^<]*</loc>" dist/in2pcfix/sitemap.xml
+
+      - name: Verify domain URLs
+        run: |
+          echo "Checking generated domain URLs..."
+
+          grep -q 'https://in2pcfix.com/' dist/in2pcfix/index.html
+          grep -q 'https://in2pcfix.com/sitemap.xml' dist/in2pcfix/robots.txt
+          grep -q 'https://in2pcfix.com/' dist/in2pcfix/sitemap.xml
+
+          echo "Domain URL verification successful."
 
       - name: Build test successful
         run: |
