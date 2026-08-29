@@ -217,7 +217,7 @@ def main():
     config = load_config()
     validate_config(config)
 
-        if "source" not in config:
+    if "source" not in config:
         raise ValueError("Missing 'source' in config/sites.json")
 
     if not config["source"].get("domain"):
@@ -230,12 +230,12 @@ def main():
 
     DIST_DIR.mkdir(parents=True, exist_ok=True)
 
-for site_id, site in config["sites"].items():
-    build_site(
-        site_id,
-        site,
-        source_domain
-    )
+    for site_id, site in config["sites"].items():
+        build_site(
+            site_id,
+            site,
+            source_domain
+        )
 
     print()
     print("======================================")
